@@ -26,12 +26,13 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QStringList>
+#include <QProcess>
+#include <QCoreApplication>
 
 #if defined(Q_WS_MAC)
 #include "client/mac/handler/exception_handler.h"
 #else if defined(Q_WS_WIN)
 #include "client/windows/handler/exception_handler.h"
-#include "mailmsg/mailmsg_windows.h"
 #endif
 
 using google_breakpad::ExceptionHandler;
@@ -89,14 +90,17 @@ bool MDCallback(const wchar_t* _dump_dir,
 	QFileInfo fi(minidumpPath);
 	qWarning("Minidump: %s", qPrintable(fi.absoluteFilePath()));
 
-#if defined(Q_WS_WIN)
-	QStringList attachments;
-	attachments << fi.absoluteFilePath();
-	MailMsg::sendEmail("mblsha@domain.org",
-	                   "Crash report",
-	                   "",
-	                   attachments);
+	QStringList arg;
+	arg << QString("-appPath=%1").arg(QCoreApplication::applicationFilePath());
+	arg << QString("-appName=%1").arg(app_version);
+	arg << QString("-minidump=%1").arg(fi.absoluteFilePath());
+
+#if defined(Q_WS_MAC)
+	QString crashReporter = QCoreApplication::applicationDirPath() + "/crashreporter.exe";
+#else if defined(Q_WS_WIN)
+	QString crashReporter = QCoreApplication::applicationDirPath() + "/crashreporter.exe";
 #endif
+	QProcess::startDetached(crashReporter, arg);
 
 	return true;
 }

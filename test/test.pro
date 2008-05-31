@@ -3,8 +3,8 @@ CONFIG += qt console
 QT += gui
 SOURCES += main.cpp
 
-BREAKPAD_PATH = $$PWD/../google-breakpad/src
-BREAKPAD_PRI = $$PWD/breakpad/breakpad.pri
+BREAKPAD_PATH = $$PWD/../../google-breakpad/src
+BREAKPAD_PRI = $$PWD/../breakpad/breakpad.pri
 include($$BREAKPAD_PRI)
 
 windows {

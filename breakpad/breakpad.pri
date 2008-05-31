@@ -22,10 +22,6 @@ exists($$BREAKPAD_PATH) {
 	}
 
 	win32 {
-		DEPENDPATH  += $$PWD/mailmsg
-		SOURCES += $$PWD/mailmsg/mailmsg_windows.cpp
-		HEADERS += $$PWD/mailmsg/mailmsg_windows.h
-
 		SOURCES += \
 			$$BREAKPAD_PATH/client/windows/handler/exception_handler.cc \
 			$$BREAKPAD_PATH/client/windows/crash_generation/crash_generation_client.cc \
