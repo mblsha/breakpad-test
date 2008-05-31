@@ -85,7 +85,6 @@ public:
 private slots:
 	void restartApp()
 	{
-		reportCrash();
 		if (!appPath_.isEmpty()) {
 			QProcess::startDetached(appPath_);
 		}
@@ -94,7 +93,6 @@ private slots:
 
 	void quitApp()
 	{
-		reportCrash();
 		close();
 	}
 
