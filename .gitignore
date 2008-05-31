@@ -1,0 +1,7 @@
+._*
+/Makefile
+/Makefile.Debug
+/Makefile.Release
+/_obj
+/release
+/debug
