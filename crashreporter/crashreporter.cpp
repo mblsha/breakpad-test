@@ -42,6 +42,8 @@ public:
 	{
 		ui_.setupUi(this);
 
+		appName_ = "Application";
+
 		ui_.textEdit->setFocus();
 	}
 
@@ -63,6 +65,11 @@ public:
 	void setAppName(const QString& appName)
 	{
 		appName_ = appName;
+	}
+
+	void setAppVersion(const QString& appVersion)
+	{
+		appVersion_ = appVersion;
 	}
 
 	void setAppPath(const QString& appPath)
@@ -110,11 +117,20 @@ private slots:
 #endif
 	}
 
+protected:
+	// reimplemented
+	void closeEvent(QCloseEvent* e)
+	{
+		reportCrash();
+		QWidget::closeEvent(e);
+	}
+
 private:
 	Ui::CrashReporter ui_;
 	QPushButton* restartButton_;
 	QPushButton* quitButton_;
 	QString appName_;
+	QString appVersion_;
 	QString appPath_;
 	QString minidump_;
 };
@@ -136,10 +152,15 @@ int main(int argc, char *argv[])
 {
 	QApplication app(argc, argv);
 	CrashReporter crashReporter;
+
 	for (int n = 1; n < argc; ++n) {
 		QString str = argv[n];
 		if (!optionValue("appName", str).isEmpty()) {
 			crashReporter.setAppName(optionValue("appName", str));
+		}
+
+		if (!optionValue("appVersion", str).isEmpty()) {
+			crashReporter.setAppVersion(optionValue("appVersion", str));
 		}
 
 		if (!optionValue("appPath", str).isEmpty()) {
@@ -151,7 +172,6 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	crashReporter.setAppName("Application");
 	crashReporter.doShow();
 	return app.exec();
 }

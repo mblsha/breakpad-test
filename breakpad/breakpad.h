@@ -24,7 +24,7 @@
 class QString;
 
 namespace Breakpad {
-	void install(const QString& minidumpPath, const QString& version);
+	void install(const QString& minidumpPath, const QString& appName, const QString& appVersion);
 }
 
 #endif

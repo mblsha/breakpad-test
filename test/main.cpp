@@ -15,7 +15,7 @@ int main (int argc, char *argv[])
 {
 	QApplication app(argc, argv);
 
-	Breakpad::install(app.applicationDirPath(), "psi-1.0.0");
+	Breakpad::install(app.applicationDirPath(), "Psi", "1.0.0");
 
 	recursion(10);
 
