@@ -11,7 +11,7 @@ mac {
 }
 
 win32 {
-	QMAKE_POST_LINK = del ..\test\release\crashreporter.exe && copy release\crashreporter.exe ..\test\release\crashreporter.exe
+	QMAKE_POST_LINK = del /Q ..\test\release\crashreporter.exe && copy release\crashreporter.exe ..\test\release\crashreporter.exe
 }
 
 windows {
