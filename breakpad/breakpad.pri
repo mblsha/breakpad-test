@@ -19,6 +19,7 @@ exists($$BREAKPAD_PATH) {
 			$$BREAKPAD_PATH/client/mac/handler/minidump_generator.cc \
 			$$BREAKPAD_PATH/common/string_conversion.cc \
 			$$BREAKPAD_PATH/common/mac/string_utilities.cc
+		LIBS += -lcrypto
 	}
 
 	win32 {

@@ -96,7 +96,7 @@ bool MDCallback(const wchar_t* _dump_dir,
 	arg << QString("-minidump=%1").arg(fi.absoluteFilePath());
 
 #if defined(Q_WS_MAC)
-	QString crashReporter = QCoreApplication::applicationDirPath() + "/crashreporter.exe";
+	QString crashReporter = QCoreApplication::applicationDirPath() + "/../Resources/crashreporter";
 #else if defined(Q_WS_WIN)
 	QString crashReporter = QCoreApplication::applicationDirPath() + "/crashreporter.exe";
 #endif

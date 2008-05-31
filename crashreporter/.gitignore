@@ -6,3 +6,7 @@
 /_ui
 /debug
 /release
+/.moc
+/.obj
+/.ui
+/crashreporter
