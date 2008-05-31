@@ -1,5 +1,5 @@
 TEMPLATE = app
-CONFIG += qt
+CONFIG += qt release
 CONFIG -= app_bundle
 QT += gui
 SOURCES += crashreporter.cpp

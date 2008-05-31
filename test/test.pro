@@ -1,5 +1,5 @@
 TEMPLATE = app
-CONFIG += qt console
+CONFIG += qt console release
 QT += gui
 SOURCES += main.cpp
 
