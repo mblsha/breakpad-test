@@ -24,6 +24,8 @@
 #include <QProcess>
 #include <QFileInfo>
 #include <QMessageBox>
+#include <QHttpRequestHeader>
+#include <QCloseEvent>
 
 #include "ui_crashreporter.h"
 
@@ -37,12 +39,16 @@ class CrashReporter : public QWidget
 public:
 	CrashReporter()
 		: QWidget()
+		, http_(0)
 		, restartButton_(0)
 		, quitButton_(0)
 	{
 		ui_.setupUi(this);
 
 		appName_ = "Application";
+
+		http_ = new QHttp(this);
+		connect(http_, SIGNAL(done(bool)), SLOT(httpDone(bool)));
 
 		ui_.textEdit->setFocus();
 	}
@@ -96,11 +102,81 @@ private slots:
 		close();
 	}
 
-	void reportCrash()
+	QByteArray makeFormField(const QString& name, const QByteArray& data)
 	{
-		if (!ui_.groupBox->isChecked())
-			return;
+		QByteArray result;
+		result.append("------FormBoundary5WRMUdn8jqMNiFOP\r\n");
+		result.append("Content-Disposition: form-data; name=\"" + name + "\"\r\n");
+		result.append("\r\n");
+		result.append(data);
+		result.append("\r\n");
+		return result;
+	}
 
+	bool reportCrash()
+	{
+		QFileInfo fi(minidump_);
+		if (!fi.exists())
+			return false;
+
+		QFile minidump(minidump_);
+		if (!minidump.open(QIODevice::ReadOnly))
+		         return false;
+
+		if (!ui_.groupBox->isChecked() || !http_)
+			return false;
+
+		if (restartButton_)
+			restartButton_->setEnabled(false);
+		if (quitButton_)
+			quitButton_->setEnabled(false);
+
+		QHttpRequestHeader header("POST", "/cgi-bin/cgi-collector/collector.py");
+		header.setValue("User-Agent", "crashreporter");
+		header.setValue("Host", "localhost");
+		header.setValue("Accept-Language", "en-us");
+		header.setValue("Content-Type", "multipart/form-data; boundary=----FormBoundary5WRMUdn8jqMNiFOP");
+		header.setValue("Accept", "*/*");
+
+		QByteArray bytes;
+		bytes.append(makeFormField("app-name", appName_.toUtf8()));
+		bytes.append(makeFormField("app-version", appVersion_.toUtf8()));
+		bytes.append(makeFormField("comments", ui_.textEdit->toPlainText().toUtf8()));
+		bytes.append(makeFormField("upload_file_minidump", minidump.readAll()));
+
+		bytes.append("------FormBoundary5WRMUdn8jqMNiFOP--");
+		bytes.append("\r\n");
+
+		int contentLength = bytes.length();
+		header.setContentLength(contentLength);
+
+		http_->setHost("localhost", 80);
+		http_->request(header, bytes);
+
+		return true;
+	}
+
+	void httpDone(bool error)
+	{
+		if (error) {
+			qWarning("CrashReporter: ERROR: %s", qPrintable(http_->errorString()));
+			sendEmail();
+		}
+		else {
+			QString result(http_->readAll());
+			QRegExp rx("CrashID\\=([\\d\\w-]+)");
+			if (rx.indexIn(result) != -1) {
+				qWarning("CrashReporter: CrashID=%s", qPrintable(rx.capturedTexts().at(1)));
+			}
+		}
+
+		delete http_;
+		http_ = 0;
+		close();
+	}
+
+	void sendEmail()
+	{
 #if defined(Q_WS_WIN)
 		QStringList attachments;
 		QFileInfo fi(minidump_);
@@ -119,12 +195,16 @@ protected:
 	// reimplemented
 	void closeEvent(QCloseEvent* e)
 	{
-		reportCrash();
+		if (reportCrash()) {
+			e->ignore();
+			return;
+		}
 		QWidget::closeEvent(e);
 	}
 
 private:
 	Ui::CrashReporter ui_;
+	QHttp* http_;
 	QPushButton* restartButton_;
 	QPushButton* quitButton_;
 	QString appName_;

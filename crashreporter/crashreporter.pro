@@ -1,7 +1,7 @@
 TEMPLATE = app
 CONFIG += qt release
 CONFIG -= app_bundle
-QT += gui
+QT += gui network
 SOURCES += crashreporter.cpp
 INTERFACES += crashreporter.ui
 include($$PWD/mailmsg/mailmsg.pri)
