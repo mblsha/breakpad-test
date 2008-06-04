@@ -21,10 +21,11 @@
 #ifndef BREAKPAD_H
 #define BREAKPAD_H
 
-class QString;
+#include <QMap>
+#include <QString>
 
 namespace Breakpad {
-	void install(const QString& minidumpPath, const QString& appName, const QString& appVersion);
+	void install(const QString& minidumpPath, const QMap<QString, QString>& params);
 }
 
 #endif

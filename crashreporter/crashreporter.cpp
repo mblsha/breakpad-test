@@ -26,6 +26,7 @@
 #include <QMessageBox>
 #include <QHttpRequestHeader>
 #include <QCloseEvent>
+#include <QUrl>
 
 #include "ui_crashreporter.h"
 
@@ -88,6 +89,16 @@ public:
 		minidump_ = minidump;
 	}
 
+	void setReportURL(const QString& reportURL)
+	{
+		reportURL_ = reportURL;
+	}
+
+	void setReportEmail(const QString& reportEmail)
+	{
+		reportEmail_ = reportEmail;
+	}
+
 private slots:
 	void restartApp()
 	{
@@ -115,13 +126,22 @@ private slots:
 
 	bool reportCrash()
 	{
-		QFileInfo fi(minidump_);
-		if (!fi.exists())
+		if (reportURL_.isEmpty()) {
+			qWarning("report url is empty");
 			return false;
+		}
+
+		QFileInfo fi(minidump_);
+		if (!fi.exists()) {
+			qWarning("minidump not found");
+			return false;
+		}
 
 		QFile minidump(minidump_);
-		if (!minidump.open(QIODevice::ReadOnly))
-		         return false;
+		if (!minidump.open(QIODevice::ReadOnly)) {
+			qWarning("unable to open minidump");
+			return false;
+		}
 
 		if (!ui_.groupBox->isChecked() || !http_)
 			return false;
@@ -131,9 +151,10 @@ private slots:
 		if (quitButton_)
 			quitButton_->setEnabled(false);
 
-		QHttpRequestHeader header("POST", "/cgi-bin/cgi-collector/collector.py");
+		QUrl url(reportURL_, QUrl::TolerantMode);
+		QHttpRequestHeader header("POST", url.path());
 		header.setValue("User-Agent", "crashreporter");
-		header.setValue("Host", "localhost");
+		header.setValue("Host", url.port() == -1 ? url.host() : QString("%1:%2").arg(url.host(), url.port()));
 		header.setValue("Accept-Language", "en-us");
 		header.setValue("Content-Type", "multipart/form-data; boundary=----FormBoundary5WRMUdn8jqMNiFOP");
 		header.setValue("Accept", "*/*");
@@ -150,7 +171,7 @@ private slots:
 		int contentLength = bytes.length();
 		header.setContentLength(contentLength);
 
-		http_->setHost("localhost", 80);
+		http_->setHost(url.host(), url.port() == -1 ? 80 : url.port());
 		http_->request(header, bytes);
 
 		return true;
@@ -161,6 +182,7 @@ private slots:
 		if (error) {
 			qWarning("CrashReporter: ERROR: %s", qPrintable(http_->errorString()));
 			sendEmail();
+			http_->abort();
 		}
 		else {
 			QString result(http_->readAll());
@@ -177,6 +199,11 @@ private slots:
 
 	void sendEmail()
 	{
+		if (reportEmail_.isEmpty()) {
+			qWarning("report email is empty");
+			return;
+		}
+
 #if defined(Q_WS_WIN)
 		QStringList attachments;
 		QFileInfo fi(minidump_);
@@ -184,7 +211,7 @@ private slots:
 			attachments << fi.absoluteFilePath();
 		}
 
-		MailMsg::sendEmail("mblsha@domain.org",
+		MailMsg::sendEmail(reportEmail_,
 		                   "Crash report",
 		                   ui_.textEdit->toPlainText(),
 		                   attachments);
@@ -211,6 +238,8 @@ private:
 	QString appVersion_;
 	QString appPath_;
 	QString minidump_;
+	QString reportURL_;
+	QString reportEmail_;
 };
 
 static QString optionValue(const QString& optionName, const QString string)
@@ -247,6 +276,14 @@ int main(int argc, char *argv[])
 
 		if (!optionValue("minidump", str).isEmpty()) {
 			crashReporter.setMinidump(optionValue("minidump", str));
+		}
+
+		if (!optionValue("reportURL", str).isEmpty()) {
+			crashReporter.setReportURL(optionValue("reportURL", str));
+		}
+
+		if (!optionValue("reportEmail", str).isEmpty()) {
+			crashReporter.setReportEmail(optionValue("reportEmail", str));
 		}
 	}
 

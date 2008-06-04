@@ -15,7 +15,12 @@ int main (int argc, char *argv[])
 {
 	QApplication app(argc, argv);
 
-	Breakpad::install(app.applicationDirPath(), "Psi", "1.0.0");
+	QMap<QString, QString> p;
+	p["name"]         = "Zysch";
+	p["version"]      = "1.0.1";
+	p["report-url"]   = "http://localhost/cgi-bin/cgi-collector/collector.py";
+	p["report-email"] = "mblsha@domain.org";
+	Breakpad::install(app.applicationDirPath(), p);
 
 	recursion(10);
 

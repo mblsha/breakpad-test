@@ -39,8 +39,7 @@ using google_breakpad::ExceptionHandler;
 
 namespace Breakpad {
 
-static QString app_name;
-static QString app_version;
+static QMap<QString, QString> params;
 
 #if defined(Q_WS_MAC)
 bool MDCallback(const char* _dump_dir,
@@ -84,7 +83,7 @@ bool MDCallback(const wchar_t* _dump_dir,
 	QString newName = QString("%1/%2_%3_%4.dmp")
 	                  .arg(dump_dir)
 	                  .arg(QDateTime::currentDateTime().toString("yyyy-MM-dd-hhmmss"))
-	                  .arg(QString("%1-%2").arg(executableFileInfo.baseName()).arg(app_version))
+	                  .arg(QString("%1-%2").arg(executableFileInfo.baseName()).arg(params["version"]))
 	                  .arg(os);
 	if (minidumpFile.rename(newName)) {
 		minidumpPath = newName;
@@ -95,8 +94,10 @@ bool MDCallback(const wchar_t* _dump_dir,
 
 	QStringList arg;
 	arg << QString("-appPath=%1").arg(executableFileInfo.absoluteFilePath());
-	arg << QString("-appName=%1").arg(app_name);
-	arg << QString("-appVersion=%1").arg(app_version);
+	arg << QString("-appName=%1").arg(params["name"]);
+	arg << QString("-appVersion=%1").arg(params["version"]);
+	arg << QString("-reportURL=%1").arg(params["report-url"]);
+	arg << QString("-reportEmail=%1").arg(params["report-email"]);
 	arg << QString("-minidump=%1").arg(fi.absoluteFilePath());
 
 #if defined(Q_WS_MAC)
@@ -111,15 +112,14 @@ bool MDCallback(const wchar_t* _dump_dir,
 
 static ExceptionHandler* handler = 0;
 
-void install(const QString& minidumpPath, const QString& appName, const QString& appVersion)
+void install(const QString& minidumpPath, const QMap<QString, QString>& params)
 {
 	char* p = getenv("DISABLE_BREAKPAD");
 	if (p || handler) {
 		return;
 	}
 
-	app_name = appName;
-	app_version = appVersion;
+	Breakpad::params = params;
 
 	handler = new ExceptionHandler(
 #if defined(Q_WS_MAC)
