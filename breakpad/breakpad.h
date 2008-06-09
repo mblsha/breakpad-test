@@ -26,6 +26,7 @@
 
 namespace Breakpad {
 	void install(const QString& minidumpPath, const QMap<QString, QString>& params);
+	void writeMinidump(const QString& suffix);
 }
 
 #endif

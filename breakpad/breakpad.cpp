@@ -40,6 +40,7 @@ using google_breakpad::ExceptionHandler;
 namespace Breakpad {
 
 static QMap<QString, QString> params;
+static QString debugSuffix;
 
 #if defined(Q_WS_MAC)
 bool MDCallback(const char* _dump_dir,
@@ -85,12 +86,22 @@ bool MDCallback(const wchar_t* _dump_dir,
 	                  .arg(QDateTime::currentDateTime().toString("yyyy-MM-dd-hhmmss"))
 	                  .arg(QString("%1-%2").arg(executableFileInfo.baseName()).arg(params["version"]))
 	                  .arg(os);
+
+	if (!Breakpad::debugSuffix.isEmpty()) {
+		qWarning("in Breakpad::writeMinidump(%s)", Breakpad::debugSuffix);
+		newName.replace(QRegExp("\\.dmp$"), QString("_%1.dmp").arg(Breakpad::debugSuffix));
+	}
+
 	if (minidumpFile.rename(newName)) {
 		minidumpPath = newName;
 	}
 
 	QFileInfo fi(minidumpPath);
 	qWarning("Minidump: %s", qPrintable(fi.absoluteFilePath()));
+
+	if (!Breakpad::debugSuffix.isEmpty()) {
+		return true;
+	}
 
 	QStringList arg;
 	arg << QString("-appPath=%1").arg(executableFileInfo.absoluteFilePath());
@@ -105,6 +116,7 @@ bool MDCallback(const wchar_t* _dump_dir,
 #else if defined(Q_WS_WIN)
 	QString crashReporter = QCoreApplication::applicationDirPath() + "/crashreporter.exe";
 #endif
+	qWarning("Starting %s", qPrintable(crashReporter));
 	QProcess::startDetached(crashReporter, arg);
 
 	return true;
@@ -128,6 +140,29 @@ void install(const QString& minidumpPath, const QMap<QString, QString>& params)
 	    minidumpPath.toStdWString(),
 #endif
 	    0, MDCallback, 0, true);
+}
+
+// TODO: FIXME: hangs completely on Mac OS X
+void writeMinidump(const QString& suffix)
+{
+	if (suffix.isEmpty()) {
+		qWarning("Breakpad::writeMinidump(): empty suffix.");
+		return;
+	}
+
+	if (!handler) {
+		qWarning("Breakpad::writeMinidump(%s) requested, but breakpad is not initialized.", qPrintable(suffix));
+		return;
+	}
+
+	Q_ASSERT(Breakpad::debugSuffix.isEmpty());
+	Breakpad::debugSuffix = suffix;
+
+	if (!handler->WriteMinidump()) {
+		qWarning("Breakpad::writeMinidump(%s): failed.", qPrintable(suffix));
+	}
+
+	Breakpad::debugSuffix = QString();
 }
 
 } // namespace Breakpad
